@@ -164,9 +164,27 @@ class TestApi(tests.LimitedTestCase):
        eventlet.sleep(DELAY)
        self.assertEqual(state, ['start', 'except', 'finished'])
        
-     
+     def test_nested_with_timeout(self):
+       def func():
+         return eventlet.with_timeout(0.2, eventlet.sleep, 2, timeout_value=1)
+         
+       try:
+         eventlet.with_timeout(0.1, func)
+         self.fail(u'Expected Timeout')
+       except eventlet.Timeout:
+         pass
 
-
+def test_wrap_is_timeout():
+  class A(object):
+    pass
+    
+  obj = eventlet.wrap_is_timeout(A)()
+  tests.check_is_timeout(obj)
+  
+def test_timeouterror_deprecated():
+  code = '''import eventlet; eventlet.Timeout(1).cancel(); print('pass')'''
+  args = ['-Werror:eventlet.Timeout:DeprecationWarning', '-c', code]
+  tests.run_python(path=None, args=args, expect_pass=True)
 ```
 
 ```sh
